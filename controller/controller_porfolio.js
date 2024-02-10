@@ -1,0 +1,144 @@
+//NOTE: For the moment the following queries are required for the client side application...
+
+
+//import the connection from the db.js file...
+const connection = require('../database/db_porfolio');
+
+//here we have all the requests get...
+
+/*Here we get all the personal projects that are in the database... */
+exports.getPersonalProjects = async (_req, res) => {
+    try{
+        const data = await connection.query(`SELECT pp.id AS project_id, pp.name_project, pp.description_project,
+            pp.github_link, pp.web_link, i.link_img AS cover_image_text,
+            GROUP_CONCAT(t.tec_name) AS technology_names, GROUP_CONCAT(t.icon_tec) AS technology_icons
+        FROM
+            personal_project pp
+        LEFT JOIN
+            image i ON pp.cover_img = i.id_img
+        LEFT JOIN
+            stack s ON pp.id = s.project_id
+        LEFT JOIN
+            technology t ON s.tech_id = t.id_tec
+        GROUP BY
+            pp.id;`);
+        
+        res.status(202).json({
+            projects: data[0],
+        });
+        console.log('Resultados', data[0])
+    } catch(err){
+        res.status(500).json({
+            message: err,
+        })
+    }
+};
+
+/*In the following function, we execute the necessary query to 
+retrieve specific information about a project's blog. This 
+includes details about the blog itself and the associated image carousel. 
+This process is essential for obtaining comprehensive information when 
+seeking more details about a particular project....*/
+exports.getPersonalProject = async (req, res) => {
+    //we have to extract the id to search for the specific project...
+    const id = req.params.id; 
+
+    try{
+        const data = await connection.query(`SELECT
+            b.id_blog AS blog_id,
+            b.title AS blog_title,
+            GROUP_CONCAT(im.link_img) AS img_carrusel,
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'sub_text', sb.title_text,
+                    'content', (
+                        SELECT JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'text', tc.text_blog, 
+                                'type',tc.type_text
+                            )
+                        )
+                        FROM text_cont_blog tc
+                        WHERE tc.id_title = sb.id_subtitle
+                    )
+                )
+            ) AS subt
+        FROM
+            blog b
+        LEFT JOIN
+            sub_title_blog sb ON b.id_blog = sb.id_blog
+        LEFT JOIN
+            img_carrusel_blog img ON b.id_blog = img.blog_id
+        LEFT JOIN
+            image im ON img.img_id = im.id_img
+        WHERE
+            b.id_blog = ?
+        GROUP BY
+            b.id_blog;`, [id]);
+        
+        //everything went well...
+        res.status(202).json({
+            personal_project_blog: data[0],
+        });
+
+    } catch(err){
+        //if there is an error, we send a message...
+        res.status(500).json({
+            message:err, 
+        })
+    }
+};
+
+//Now here we start with the work prokects section...
+//Firts we get all the projects...
+exports.getWorkProjects = async (_req, res) => {
+    try{
+        const data = await connection.query(`SELECT wp.id_work, wp.work_project_name, wp.start_date, wp.end_date, wp.project_status, wp.link_project, im.link_img AS logo 
+        FROM work_project wp
+        JOIN image im ON wp.logo = im.id_img;`);
+
+        res.status(202).json({
+            works: data[0],
+        }); 
+
+    } catch(err){
+        res.status(500).json({
+            message:err,
+        })
+    }
+};
+
+/*then we search for a specific project with alll its data: 
+1. description
+2. paragraph
+3. imgs 
+this is to offer more information, to the person who is 
+looking at my porfolio, about the specific project...*/
+exports.getWorkProject = async (req, res) => {
+    //we extract the id to search for the project...
+    const id = req.params.id;
+
+    try{
+        const data = await connection.query(`
+        SELECT wp.id_work, wp.work_project_name, wp.link_project,
+        GROUP_CONCAT(im.link_img) AS img_carrusel,
+        GROUP_CONCAT(p.text_p) AS description
+        FROM work_project wp
+        LEFT JOIN work_carrusel_img wci ON wp.id_work = wci.work_id
+        LEFT JOIN image im ON wci.img_id = im.id_img
+        LEFT JOIN description d ON wp.id_work = d.id_work
+        LEFT JOIN paragraph p ON d.id_paragraph = p.id_p
+        WHERE wp.id_work = ?
+        GROUP BY wp.id_work;`, [id]);
+
+        res.status(202).json({
+            work_project_blog: data[0],
+        })
+
+    } catch(err){
+        res.status(500).json({
+            message:err,
+        })
+
+    }
+}
