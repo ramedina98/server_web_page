@@ -142,3 +142,87 @@ exports.getWorkProject = async (req, res) => {
 
     }
 }
+
+//The next part is: getting the information for my resume...
+/*This query returns: 
+1. my complete information 
+2. the link to my pdf resume
+3. my experiences (jobs and taskas perfomed)
+4. technologies and tools I am proficent in*/
+exports.getResume = async (req, res) => {
+    try{
+        const data = await connection.query(`SELECT m.job_title, m.first_name AS nombre1,
+            m.second_name AS nombre2, m.paternal_surname AS apellido1, m.maternal_surname AS apellido2,
+            l.country, l.state, l.city, m.email, m.phone, r.link_pdf, ri.description_resume,
+            (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'tec_name', tec.tec_name,
+                        'type_tec', tec.type_tec
+                    )
+                )
+                FROM techno_resume tr
+                JOIN technology tec ON tr.id_tec = tec.id_tec
+                WHERE tr.id_resume = r.id_resume
+            ) AS technology_info,
+            e.description_exp,
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'job', j.company_name,
+                    'position', j.position_job,
+                    'start_date', j.start_date,
+                    'end_date', j.end_date,
+                    'tasks', tasks.task_info
+                )
+            ) AS job_info
+        FROM
+            my_resume r
+        JOIN
+            resume_information ri ON r.information = ri.id_info
+        JOIN
+            me m ON ri.my_information = m.id
+        JOIN
+            location l ON m.location = l.id_l
+        JOIN
+            experience e ON ri.experience = e.id_e
+        LEFT JOIN
+            job j ON e.id_e = j.id_experience
+        LEFT JOIN (
+            SELECT
+                id_job,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'text', text_task
+                    )
+                ) AS task_info
+            FROM
+                task_performed
+            GROUP BY
+                id_job
+        ) AS tasks ON j.id_job = tasks.id_job
+        GROUP BY
+            m.job_title,
+            m.first_name,
+            m.second_name,
+            m.paternal_surname,
+            m.maternal_surname,
+            l.country,
+            l.state,
+            l.city,
+            m.email,
+            m.phone,
+            r.link_pdf,
+            ri.description_resume,
+            e.description_exp;`);
+
+        res.status(202).json({
+            resume: data[0],
+        }); 
+
+    } catch(err){
+        res.status(500).json({
+            message: err,
+        }); 
+
+    }
+};

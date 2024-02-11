@@ -20,4 +20,7 @@ router.get('/personal_project/:id', crud.getPersonalProject);
 router.get('/work_projects', crud.getWorkProjects);
 router.get('/work_project/:id', crud.getWorkProject);
 
+//my resume...
+router.get('/resume', crud.getResume);
+
 module.exports = router;
