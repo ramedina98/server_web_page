@@ -1,5 +1,4 @@
-//NOTE: For the moment the following queries are required for the client side application...
-
+//TODO: falta hacer el post del formulario de contacto...
 
 //import the connection from the db.js file...
 const connection = require('../database/db_porfolio');
@@ -149,7 +148,7 @@ exports.getWorkProject = async (req, res) => {
 2. the link to my pdf resume
 3. my experiences (jobs and taskas perfomed)
 4. technologies and tools I am proficent in*/
-exports.getResume = async (req, res) => {
+exports.getResume = async (_req, res) => {
     try{
         const data = await connection.query(`SELECT m.job_title, m.first_name AS nombre1,
             m.second_name AS nombre2, m.paternal_surname AS apellido1, m.maternal_surname AS apellido2,
