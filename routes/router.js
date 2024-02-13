@@ -38,6 +38,9 @@ router.get('/work_project/:id', crud.getWorkProject);
 //my resume...
 router.get('/resume', crud.getResume);
 
-//POST 
+//POST
+
+//messages from potential customers...
+router.post('/message_email', crud.postMessageEmails);
 
 module.exports = router;

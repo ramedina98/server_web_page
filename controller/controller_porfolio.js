@@ -2,8 +2,11 @@
 
 //import the connection from the db.js file...
 const connection = require('../database/db_porfolio');
+//
+const sendEmail = require('./emailController/sendEmail.js');
 
-//here we have all the requests get...
+
+//SECTION: GET methods...
 
 /*Here we get all the personal projects that are in the database... */
 exports.getPersonalProjects = async (_req, res) => {
@@ -225,3 +228,61 @@ exports.getResume = async (_req, res) => {
 
     }
 };
+
+//SECTION: POST methods...
+
+/*on the client's side is a contact form, here we save the data: name, email and
+message; this to maybe later be in contact with the potential clients and check if
+in the future a service is offered...
+
+In general terms, this is the most complex function: 
+
+1. It must collect the information and store it in the db
+2. Send an email to the client thanking her/him for contacting me and that
+I will reply soon (tample HTML)
+3. Send an email to me to alert me that a customer contacted me (obviously with the
+message and the customer's email address)
+*/
+exports.postMessageEmails = async (req, res) => {
+    try{
+        //Extract specific fields from the request body...
+        const { name_person, email_person, message } = req.body;
+
+        //we validate the data...
+        if(!name_person || !email_person || !message){
+            //we return a status of 400 to indicate that there is an error...
+            return res.status(400).json({
+                error: 'Invalid data. Please provide all requiered fiels', 
+            })
+        }
+
+        //Create the SQL query to insert data into the 'message_email' table...
+        const sql = 'INSERT INTO message_email (name_person, email_person, message) VALUES (?,?,?)';
+
+        //Execute the query...
+        const result = await connection.query(sql, [name_person, email_person, message]); 
+        connection.end(); //we close the connection...
+
+        //customer email
+        const customerEmail = await sendEmail('Thank you for contacting Ricardo Medina Dev', req.body, true);
+
+        //email to me...
+        const emailtome = await sendEmail('Potential customer', req.body, false);
+
+        /*we return a status 202 with several messages to indicate that everything
+        want perfectly...*/
+        res.status(202).json({
+            message: 'Data successfully saved: ', result, 
+            customer: customerEmail, 
+            emailtome: emailtome,
+        });
+
+    } catch(err){ // Handle errors
+
+        //we return a status of 500 to indicate that there was a server error...
+        res.status(500).json({ 
+            error: 'Internal Server Error', 
+            message: err.message,
+        });
+    }
+}
