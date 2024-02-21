@@ -3,12 +3,17 @@ require('dotenv').config();
 
 //Import the express library...
 const express = require('express');
+//import cors middleware... 
+const cors = require('cors');
 
 //create an instance of the Express application...
 const app = express();
 
 //Enable express.json() middleware to parse JSON-formatted request body...
 app.use(express.json());
+
+//
+app.use(cors());
 
 //Import the router from the router.js file...
 const router = require('./routes/router.js');

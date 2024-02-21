@@ -12,7 +12,7 @@ function loginUser(req, res){
         
         const user = { id: 1, username: credentials.username };
         //generate a new token...
-        const token = jwt.sign(user, process.env.MY_SECRET_KEY, { expiresIn: '10h'});
+        const token = jwt.sign(user, process.env.MY_SECRET_KEY, { expiresIn: '1h'});
 
         //we return the token in a json...
         res.json({ token });
