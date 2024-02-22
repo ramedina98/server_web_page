@@ -11,8 +11,9 @@ function loginUser(req, res){
     if(credentials.username === process.env.USUARIO){
         
         const user = { id: 1, username: credentials.username };
-        //generate a new token...
-        const token = jwt.sign(user, process.env.MY_SECRET_KEY, { expiresIn: '1h'});
+        
+        //generate a new token, its duration will be one day...
+        const token = jwt.sign(user, process.env.MY_SECRET_KEY, { expiresIn: '1d'});
 
         //we return the token in a json...
         res.json({ token });
