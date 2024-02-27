@@ -244,10 +244,10 @@ message and the customer's email address)
 exports.postMessageEmails = async (req, res) => {
     try{
         //Extract specific fields from the request body...
-        const { name_person, email_person, message } = req.body;
+        const { name, email, message } = req.body;
 
         //we validate the data...
-        if(!name_person || !email_person || !message){
+        if(!name || !email || !message){
             //we return a status of 400 to indicate that there is an error...
             return res.status(400).json({
                 error: 'Invalid data. Please provide all requiered fiels', 
@@ -258,9 +258,8 @@ exports.postMessageEmails = async (req, res) => {
         const sql = 'INSERT INTO message_email (name_person, email_person, message) VALUES (?,?,?)';
 
         //Execute the query...
-        const result = await connection.query(sql, [name_person, email_person, message]); 
-        connection.end(); //we close the connection...
-
+        const result = await connection.query(sql, [name, email, message]); 
+        
         //customer email
         const customerEmail = await sendEmail('Thank you for contacting Ricardo Medina Dev', req.body, true);
 
@@ -274,6 +273,8 @@ exports.postMessageEmails = async (req, res) => {
             customer: customerEmail, 
             emailtome: emailtome,
         });
+
+        
 
     } catch(err){ // Handle errors
 
