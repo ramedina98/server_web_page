@@ -1,4 +1,5 @@
 //import the connection from the db.js file...
+const { parse } = require('dotenv');
 const connection = require('../database/db_porfolio');
 //
 const sendEmail = require('./emailController/sendEmail.js');
@@ -39,6 +40,7 @@ retrieve specific information about a project's blog. This
 includes details about the blog itself and the associated image carousel. 
 This process is essential for obtaining comprehensive information when 
 seeking more details about a particular project....*/
+
 exports.getPersonalProject = async (req, res) => {
     //we have to extract the id to search for the specific project...
     const id = req.params.id; 
@@ -46,8 +48,14 @@ exports.getPersonalProject = async (req, res) => {
     try{
         const data = await connection.query(`SELECT
             b.id_blog AS blog_id,
+            b.publication_date AS date,
             b.title AS blog_title,
-            GROUP_CONCAT(im.link_img) AS img_carrusel,
+            b.sub_text AS brief,
+            b.main_img,
+            pp.github_link AS github, 
+            pp.web_link AS web,
+            JSON_ARRAYAGG(DISTINCT JSON_OBJECT('icon_tec', t.icon_tec)) AS technology,
+            JSON_ARRAYAGG(DISTINCT JSON_OBJECT('img_link', im.link_img)) AS img_carrusel,
             JSON_ARRAYAGG(
                 JSON_OBJECT(
                     'sub_text', sb.title_text,
@@ -71,14 +79,79 @@ exports.getPersonalProject = async (req, res) => {
             img_carrusel_blog img ON b.id_blog = img.blog_id
         LEFT JOIN
             image im ON img.img_id = im.id_img
+        LEFT JOIN 
+            personal_project pp ON b.id_blog = pp.id_blog
+        LEFT JOIN
+            stack s ON pp.id = s.project_id
+        LEFT JOIN
+            technology t ON s.tech_id = t.id_tec
         WHERE
             b.id_blog = ?
         GROUP BY
             b.id_blog;`, [id]);
+
+        //Function to clean the array of repeated elements...
+        const cleanRepeatedElements = (array) => {
+            //Array to keep track pf unique sub_text values...
+            const uniqueSubText = [];
+            //Array to store the result without duplicate sub_text...
+            const resultArray = [];
+
+            //iterate through each item in the input array...
+            array.forEach(item => {
+                //Extract the sub_text value from the current item...
+                const subText = item.sub_text; 
+
+                //check if the sub_text is not already in the uniqueSubText array...
+                if(!uniqueSubText.includes(subText)){
+                    //if not, add the sub_text to uniqueSubText and push the item to resultArray...
+                    uniqueSubText.push(subText);
+                    resultArray.push(item);
+                }
+            });
+
+            //return the array without duplicate sub_text values...
+            return resultArray;
+        }
+
+        //clear elements with null values...
+        const cleanNullData = (array) => {
+            // Array to store the result without null icon_tec values...
+            const resultArray = [];
+        
+            // Iterate through each item in the input array...
+            array.forEach(item => {
+                // Extract the icon_tec value from the current item...
+                const iconTec = item.icon_tec;
+        
+                // Check if the icon_tec is not null...
+                if (iconTec !== null) {
+                    // If not null, push the item to resultArray...
+                    resultArray.push(item);
+                }
+            });
+        
+            // Return the array without null icon_tec values...
+            return resultArray;
+        };
+
+        //parse the json data and clean the array of repeated elements...
+        const subTitles = cleanRepeatedElements(JSON.parse(data[0][0].subt));
+        //parse the json data and cleear elements with null values...
+        const tecIcons = cleanNullData(JSON.parse(data[0][0].technology))
         
         //everything went well...
         res.status(202).json({
-            personal_project_blog: data[0],
+            blog_id: data[0][0].blog_id,
+            date: data[0][0].date,
+            blog_title: data[0][0].blog_title,
+            brief: data[0][0].brief,
+            topSectionImg: data[0][0].main_img,
+            tec: tecIcons,
+            img_carrusel: JSON.parse(data[0][0].img_carrusel),
+            subT: subTitles,
+            git: data[0][0].github, 
+            web: data[0][0].web,
         });
 
     } catch(err){
@@ -114,6 +187,7 @@ exports.getWorkProjects = async (_req, res) => {
 3. imgs 
 this is to offer more information, to the person who is 
 looking at my porfolio, about the specific project...*/
+
 exports.getWorkProject = async (req, res) => {
     //we extract the id to search for the project...
     const id = req.params.id;
@@ -121,8 +195,8 @@ exports.getWorkProject = async (req, res) => {
     try{
         const data = await connection.query(`
         SELECT wp.id_work, wp.work_project_name, wp.link_project,
-        GROUP_CONCAT(im.link_img) AS img_carrusel,
-        GROUP_CONCAT(p.text_p) AS description
+        JSON_ARRAYAGG(im.link_img) AS img_carrusel,
+        JSON_ARRAYAGG(p.text_p) AS description
         FROM work_project wp
         LEFT JOIN work_carrusel_img wci ON wp.id_work = wci.work_id
         LEFT JOIN image im ON wci.img_id = im.id_img
@@ -131,8 +205,39 @@ exports.getWorkProject = async (req, res) => {
         WHERE wp.id_work = ?
         GROUP BY wp.id_work;`, [id]);
 
+        //Function to clean the array of repeated elements...
+        const cleanRepeatedElements = (array) => {
+            //Array to keep track pf unique sub_text values...
+            const uniqueText = [];
+            //Array to store the result without duplicate sub_text...
+            const resultArray = [];
+
+            //iterate through each item in the input array...
+            array.forEach(item => {
+                //Extract the sub_text value from the current item...
+                const Text = item; 
+
+                //check if the sub_text is not already in the uniqueSubText array...
+                if(!uniqueText.includes(Text)){
+                    //if not, add the sub_text to uniqueSubText and push the item to resultArray...
+                    uniqueText.push(Text);
+                    resultArray.push(item);
+                }
+            });
+
+            //return the array without duplicate sub_text values...
+            return resultArray;
+        }
+
+        const description = cleanRepeatedElements(JSON.parse(data[0][0].description))
+        const imgs = cleanRepeatedElements(JSON.parse(data[0][0].img_carrusel));
+
         res.status(202).json({
-            work_project_blog: data[0],
+            id_work: data[0][0].id_work,
+            title: data[0][0].work_project_name,
+            description: description,
+            imgs: imgs,
+            link_project: data[0][0].link_project,
         })
 
     } catch(err){
