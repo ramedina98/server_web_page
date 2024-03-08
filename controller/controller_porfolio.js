@@ -321,7 +321,21 @@ exports.getResume = async (_req, res) => {
             e.description_exp;`);
 
         res.status(202).json({
-            resume: data[0],
+            nombre1: data[0][0].nombre1,
+            nombre2: data[0][0].nombre2, 
+            apellido1: data[0][0].apellido1, 
+            apellido2: data[0][0].apellido2,
+            job_title: data[0][0].job_title,
+            country: data[0][0].country, 
+            state: data[0][0].state,
+            city: data[0][0].city,
+            phone: data[0][0].phone, 
+            email: data[0][0].email,
+            link_pdf: data[0][0].link_pdf,
+            description_resume: data[0][0].description_resume,
+            description_exp: data[0][0].description_exp,
+            job_info: JSON.parse(data[0][0].job_info),
+            technology_info: JSON.parse(data[0][0].technology_info),
         }); 
 
     } catch(err){
