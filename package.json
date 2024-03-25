@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm run build --omit=dev && node server.js"
+    "start": "--omit=dev && node ./server.js"
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "16.4.1",
