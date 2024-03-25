@@ -1,5 +1,4 @@
 //import the connection from the db.js file...
-const { parse } = require('dotenv');
 const connection = require('../database/db_porfolio');
 //
 const sendEmail = require('./emailController/sendEmail.js');
