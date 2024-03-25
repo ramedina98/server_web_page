@@ -22,9 +22,9 @@ const router = require('./routes/router.js');
 app.use('/', router);
 
 //Get the port number from enviroment variable or use the default port
-const PORT = process.env.SERVER_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 //start the server and listen on the specified port...
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`);
 })
