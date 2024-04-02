@@ -51,16 +51,16 @@ router.post('/message_email', crud.postMessageEmails);
             - delete -> done
         2. Tech. 
             - get -> done
-            - post -> unstarted
+            - post -> done
             - put -> done
-        3. trabjos. 
-            - get -> unstarted
-            - post -> unstarted
-            - update -> unstarted
-            - delete -> unstarted
+        3. trabajos. 
+            - get -> done
+            - post -> done
+            - update -> done
+            - delete -> done
         4. Experience. 
-            - get -> unstarted
-            - update -> unstarted
+            - get -> done
+            - update -> done
         5. resume_info. 
             - get -> unstarted
             - update -> unstarted
@@ -79,9 +79,35 @@ router.delete('/delete_email/:id', crud.deleteEmails);
 
 /*TECHNOLOGYS*/
 //We get all the data of the tech table...
-router.get('/technologys', crud.getTech);
+router.get('/technologies', crud.getTech);
+
+//route to add new technologies to the table...
+router.post('/new_technology', crud.postTech);
 
 //route to update the information of a technology...
-router.put('/technology_update/:id', crud.putTech);
+router.put('/update_technology', crud.putTech);
+
+/*JOBS*/
+//route to get all the data in job and task_performed tables...
+router.get('/jobs', crud.getJobs);
+
+//route to insert information about another job...
+router.post('/new_job', crud.postJob);
+
+//route to update information about a job...
+router.put('/update_job', crud.putJob);
+
+//route to update information about a task...
+router.put('/update_task', crud.putTask);
+
+//route to delete infromation about a job an its tasks...
+router.delete('/delete_job', crud.deleteJob);
+
+/*EXPERIENCE*/
+//route to get the only record in the experience table...
+router.get('/experience', crud.getExperience);
+
+//route to update the description column...
+router.put('/update_experience', crud.putExperience);
 
 module.exports = router;

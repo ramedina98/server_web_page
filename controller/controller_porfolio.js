@@ -419,16 +419,16 @@ exports.postMessageEmails = async (req, res) => {
         - delete -> done
     2. Tech. 
         - get -> done
-        - post -> unstarted
+        - post -> done
         - put -> done
-    3. trabjos. 
-        - get -> unstarted
-        - post -> unstarted
-        - update -> unstarted
-        - delete -> unstarted
+    3. trabajos. 
+        - get -> done --> checar más adelante...
+        - post -> done
+        - update -> done
+        - delete -> done
     4. Experience. 
-        - get -> unstarted
-        - update -> unstarted
+        - get -> done
+        - update -> done
     5. resume_info. 
         - get -> unstarted
         - update -> unstarted
@@ -463,7 +463,7 @@ exports.getEmails = async(_req, res) => {
         }));
 
         // send the emails as a JSON response with status code 202 (accepted)
-        res.status(202).json(emails);
+        res.status(200).json(emails);
 
     } catch(error){
         res.status(500).json({
@@ -482,7 +482,7 @@ exports.deleteEmails = async(req, res) => {
         await connection.query('DELETE FROM message_email WHERE id = ?', [id]);
 
         // Response with a success message... 
-        res.status(200).json({
+        res.status(204).json({
             message: 'Email successfully deleted'
         }); 
 
@@ -505,9 +505,9 @@ exports.getTech = async(_req, res) => {
 
         //check if the array is empty...
         if(data.length === 0){
-            res.status(404).json({
+            return res.status(404).json({
                 message: 'No tech found',
-            })
+            }) 
         }
 
         // Map over the array to transform each email object into desired format...
@@ -519,7 +519,7 @@ exports.getTech = async(_req, res) => {
         }));
 
         // send the emails as a JSON response with status code 202 (accepted)
-        res.status(202).json(techs);
+        res.status(200).json(techs);
 
     } catch (error) {
         // handle any error...
@@ -529,14 +529,34 @@ exports.getTech = async(_req, res) => {
     }
 }
 
-//2. PUT: updating data of any technology...
+//2. POST: adding new technologies...
+exports.postTech = async(req, res) => {
+    try {
+        // Extrac the data sent in the body...
+        const { name, icon, type } = req.body; 
+
+        //Execute the query...
+        await connection.query(`INSERT INTO technology (tec_name, icon_tec, type_tec) 
+                                VALUES (?, ?, ?)`, [name, icon, type]); 
+        
+        // if the insertion is successful, send a sucess response to the client...
+        res.status(201).json({
+            message: 'Technology added successfully', 
+        })
+
+    } catch (error) {
+        // if an error accurs during the insertion handle it and send an error response...
+        res.status(500).json({
+            message: 'Internal server error',
+        })
+    }
+}
+
+//3. PUT: updating data of any technology...
 exports.putTech = async(req, res) => {
     try {
         // Extract the tec name, icon and type from the request parameter...
-        const { name, icon, type } = req.body; 
-
-        // Extract the ID from the request parameter...
-        const { id } = req.params; 
+        const { name, icon, type, id } = req.body;  
 
         //execute the query...
         await connection.query(`UPDATE technology 
@@ -554,5 +574,219 @@ exports.putTech = async(req, res) => {
             message: 'Error updating technology', 
             error: error.message,
         })
+    }
+}
+
+/*JOBS: here we have all the jobs, get, put, post, delete controller functions...*/
+
+/*1. GET: we have to get the data from two tables
+*/
+exports.getJobs = async(_req, res) => {
+    try {
+        //create and execute the query...
+        const data = await connection.query(`SELECT j.*, 
+                                                (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', t.id, 'text', t.text_task))
+                                                FROM task_performed t 
+                                                WHERE t.id_job = j.id_job) AS tasksPerformed
+                                            FROM job j;`); 
+
+        // Check if there is data in the table...
+        if(data.length === 0){
+            return res.status(404).json({
+                message: 'Jobs not found', 
+            });
+        }
+
+        // If it is not empty, we map the information and shape the json elements...
+        const jobs = data[0].map(row => ({
+            id_job: row.id_job,
+            description_job: row.description_job,
+            company_name: row.company_name,
+            position_job: row.position_job,
+            start_date: row.start_date,
+            end_date: row.end_date,
+            task: row.tasksPerformed ? JSON.parse(row.tasksPerformed) : [] // Parse the tasksPerformed JSON string
+        }));
+
+        // Send the emails as a JSON response with status code 202 (accepted)
+        res.status(200).json(jobs);
+
+    } catch (error) {
+        // handle any error...
+        res.status(500).json({
+            message: error,
+        });
+    }
+}
+
+/*2. POST: whe adding new jobs, we have to add the requered information for the job table 
+    and tasks performed, which will be added in the task_performed table...
+*/
+exports.postJob = async(req, res) => {
+    try {
+        //Extract data sent in the request body...
+        const { description, company_name, position_job, start_date, end_date, tasks } = req.body; 
+
+        // Execute the INSERT query to add the job
+        const jobInserted = await connection.query(`INSERT INTO job (id_experience, description_job, company_name, position_job, start_date, end_date) 
+        VALUES (?, ?, ?, ?, ?, ?)`, [1, description, company_name, position_job, start_date, end_date]);
+
+        // Get the ID of the newly inserted job
+        const jobId = jobInserted[0].insertId;
+
+        // Execute a series of INSERT queries to add tasks associated with the job
+        const tasksValues = tasks.map(task => [jobId, task.text]);
+        await connection.query('INSERT INTO task_performed (id_job, text_task) VALUES ?', [tasksValues]);
+
+        res.status(201).json({ 
+            message: 'Job and tasks inserted successfully', 
+        });
+
+    } catch (error) {
+        console.error('Error in postJobs function:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+/*3. PUT: we make possible to update the data, but in this case they will be updated
+    separately...
+
+    - job table.
+    - task table. 
+*/
+
+//updating a record in the job table...
+exports.putJob = async(req, res) => {
+    try {
+        // Extract data sent in the request body...
+        const { id, description, company_name, position_job, start_date, end_date } = req.body; 
+        
+        // Execute th query...
+        await connection.query(`UPDATE job 
+        SET description_job = ?, company_name = ?, position_job = ?, start_date = ?, end_date = ?
+        WHERE id_job = ?`, [description, company_name, position_job, start_date, end_date, id]);
+
+        // Response with a success message... 
+        res.status(200).json({
+            message: 'Successfully updated',
+        });
+
+    } catch (error) {
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error updating job', 
+            error: error.message,
+        });
+    }
+}
+
+//updating a record in the task table...
+exports.putTask = async(req, res) => {
+    try {
+        //Extract data sent in request body...
+        const { id, text } = req.body;
+
+        // Execute the query...
+        await connection.query(`UPDATE task_performed 
+        SET text_task = ?
+        WHERE id = ?`, [text, id]); 
+
+        res.status(200).json({
+            message: 'Successfully updated'
+        }); 
+
+    } catch (error) {
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error updating task', 
+            error: error.message,
+        });
+    }
+}
+
+/*4. DELETE: This is the next step, to be able to delete information from the two tables.
+    First would be the records in the task table, records releted to job, and then the record
+    in job table...
+*/
+
+exports.deleteJob = async(req, res) => {
+    try {
+        // Extracat id of the job sent in the request body...
+        const { jobId } = req.body; 
+
+        /*we run the query to delete information from the task table, 
+        records releted to id_job...*/
+        await connection.query('DELETE FROM task_performed WHERE id_job = ?', [jobId]);
+
+        //now we delete the record in the job table related to id_job...
+        await connection.query('DELETE FROM job WHERE id_job = ?', [jobId]); 
+
+        // Response with a success message... 
+        res.status(204).json({
+            message: 'Job successfully deleted'
+        }); 
+
+    } catch (error) {
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error deleting job and its tasks', 
+            error: error.message,
+        });
+    }
+}
+
+/*EXPERIENCE: here we have all the experience, get and put controller functions...*/
+
+//GET
+exports.getExperience = async(_req, res) => {
+    try {
+        // Execute the query...
+        /*I only have one record in this table and it will always be like that, 
+        so I only need the first one...
+        */
+        const data = await connection.query('SELECT * FROM experience WHERE id_e = ?', [1]);
+
+        // If it is empty it sends a message...
+        if(data.length === 0){
+            return res.status(404).json({
+                message: 'Nothing was found', 
+            }); 
+        }
+
+        const experience = {
+            text: data[0][0].description_exp, 
+        }
+
+        res.status(200).json(experience);
+
+    } catch (error) {
+        // handle any error...
+        res.status(500).json({
+            message: error,
+        });
+    }
+}
+
+//PUT: to edit the text column of the first and only record in the experience table...
+exports.putExperience = async(req, res) => {
+    try {
+        //Extract data sent in the request body...
+        const { text } = req.body; 
+
+        // Execute the query...
+        await connection.query(`UPDATE experience 
+        SET description_exp = ?
+        WHERE id_e = ?`, [text, 1]); 
+
+        res.status(200).json({
+            message: 'Successfully updated'
+        }); 
+
+    } catch (error) {
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error updating experience', 
+            error: error.message,
+        });
     }
 }
