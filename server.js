@@ -1,3 +1,15 @@
+/*TODO: 
+    Empezaremos los trabajos para crear los nuevos endpoints. Los cuales 
+    nos ayudaran a crear las APIS que sera usadas en la aplicación de administración
+    de mi pagina web...
+
+    cosas a tener en cuenta: 
+    
+    1. cambiar este script al momento de terminar todo : "start": "nodemon ./server.js" --> "start": "node ./server.js"
+    2. Crear la vista con ejs para la raiz del proyecto...
+    3. Crear la HTML template para los emails...
+*/
+
 //Load enviroment variables from the .env file
 require('dotenv').config();
 
@@ -12,7 +24,7 @@ const app = express();
 //Enable express.json() middleware to parse JSON-formatted request body...
 app.use(express.json());
 
-//
+// Enable CORS middleware for corss-origin requests...
 app.use(cors());
 
 //Import the router from the router.js file...

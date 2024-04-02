@@ -3,6 +3,10 @@ const connection = require('../database/db_porfolio');
 //
 const sendEmail = require('./emailController/sendEmail.js');
 
+/*NOTE: 
+The functions we see below belong to the first phase, wihch provides us with 
+the necessary API's used in the front-end that the user sees...
+*/
 
 //SECTION: GET methods...
 
@@ -341,7 +345,6 @@ exports.getResume = async (_req, res) => {
         res.status(500).json({
             message: err,
         }); 
-
     }
 };
 
@@ -401,5 +404,155 @@ exports.postMessageEmails = async (req, res) => {
             error: 'Internal Server Error', 
             message: err.message,
         });
+    }
+}
+
+
+/*NOTE: 
+    The following functions belong to the second phase of this project. With them we create the 
+    necessary API's to use the necessary information in the ADMINISTRATOR APP of my porfolio web page...
+*/
+
+/*TODO: 
+    1. Emails. 
+        - get -> done
+        - delete -> done
+    2. Tech. 
+        - get -> done
+        - post -> unstarted
+        - put -> done
+    3. trabjos. 
+        - get -> unstarted
+        - post -> unstarted
+        - update -> unstarted
+        - delete -> unstarted
+    4. Experience. 
+        - get -> unstarted
+        - update -> unstarted
+    5. resume_info. 
+        - get -> unstarted
+        - update -> unstarted
+    6.Personal_info.
+        - get -> unstarted
+        - update -> unstarted
+    7. 
+*/
+
+/*EMAILS: here we have the email, get and delete controller functions...*/
+
+//1. GET...
+exports.getEmails = async(_req, res) => {
+    try{
+        //we obtain the data with the following query...
+        const data = await connection.query('SELECT * FROM message_email;');
+
+        //check if the array is empty...
+        if(data.length === 0){
+            return res.status(404).json({
+                message: 'No emails found',
+            });
+        }
+
+        // if it is not empty... 
+        // Map over the array to transform each email object into desired format...
+        const emails = data[0].map(email => ({
+            id: email.id,
+            name: email.name_person,
+            email_address: email.email_person,
+            message: email.message
+        }));
+
+        // send the emails as a JSON response with status code 202 (accepted)
+        res.status(202).json(emails);
+
+    } catch(error){
+        res.status(500).json({
+            message: error,
+        }); 
+    }
+}
+
+//2. DELETE...
+exports.deleteEmails = async(req, res) => {
+    try{
+        // Extract the ID from the request parameter...
+        const { id } = req.params;
+
+        //execute the DELETE query... 
+        await connection.query('DELETE FROM message_email WHERE id = ?', [id]);
+
+        // Response with a success message... 
+        res.status(200).json({
+            message: 'Email successfully deleted'
+        }); 
+
+    } catch(error){
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error deleting email', 
+            error: error.message,
+        })
+    }
+}
+
+/*TECHNOLOGY: here we have the tech, get, post, update controller functions...*/
+
+//1. GET: all the data...
+exports.getTech = async(_req, res) => {
+    try {
+        //we obtain the data with the following query...
+        const data = await connection.query('SELECT * FROM technology;');
+
+        //check if the array is empty...
+        if(data.length === 0){
+            res.status(404).json({
+                message: 'No tech found',
+            })
+        }
+
+        // Map over the array to transform each email object into desired format...
+        const techs = data[0].map(tech => ({
+            id: tech.id_tec, 
+            name: tech.tec_name, 
+            icon: tech.icon_tec, 
+            type: tech.type_tec,
+        }));
+
+        // send the emails as a JSON response with status code 202 (accepted)
+        res.status(202).json(techs);
+
+    } catch (error) {
+        // handle any error...
+        res.status(500).json({
+            message: error,
+        }); 
+    }
+}
+
+//2. PUT: updating data of any technology...
+exports.putTech = async(req, res) => {
+    try {
+        // Extract the tec name, icon and type from the request parameter...
+        const { name, icon, type } = req.body; 
+
+        // Extract the ID from the request parameter...
+        const { id } = req.params; 
+
+        //execute the query...
+        await connection.query(`UPDATE technology 
+                                SET tec_name = ?, icon_tec = ?, type_tec = ?
+                                WHERE id_tec = ?`, [name, icon, type, id]);
+
+        // Response with a success message... 
+        res.status(200).json({
+            message: 'Successfully updated',
+        });
+
+    } catch (error) {
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error updating technology', 
+            error: error.message,
+        })
     }
 }

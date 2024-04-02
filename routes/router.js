@@ -27,20 +27,61 @@ router.get('/', (_req, res) => {
 //protected routes...
 router.use(authenticateToken);
 
+//NOTE: the following routes belong to the first phase of the project...
+
 //This are for personal projects...
-router.get('/personal_projects', crud.getPersonalProjects);
-router.get('/personal_project/:id', crud.getPersonalProject);
+router.get('/personal_projects', crud.getPersonalProjects); // <-- however, it is used in the second phase
+router.get('/personal_project/:id', crud.getPersonalProject); // <-- ALERT: define use in the second phase...
 
 //This are for work projects...
-router.get('/work_projects', crud.getWorkProjects);
-router.get('/work_project/:id', crud.getWorkProject);
+router.get('/work_projects', crud.getWorkProjects); // <-- however, it is used in the second phase
+router.get('/work_project/:id', crud.getWorkProject); //<-- ALERT: define use in the second phase...
 
 //my resume...
 router.get('/resume', crud.getResume);
 
-//POST
-
 //messages from potential customers...
 router.post('/message_email', crud.postMessageEmails);
+
+//NOTE: the following routes belong to the second phase...
+/*
+    TODO: 
+        1. Emails. 
+            - get -> done
+            - delete -> done
+        2. Tech. 
+            - get -> done
+            - post -> unstarted
+            - put -> done
+        3. trabjos. 
+            - get -> unstarted
+            - post -> unstarted
+            - update -> unstarted
+            - delete -> unstarted
+        4. Experience. 
+            - get -> unstarted
+            - update -> unstarted
+        5. resume_info. 
+            - get -> unstarted
+            - update -> unstarted
+        6.Personal_info.
+            - get -> unstarted
+            - update -> unstarted
+        7.
+*/
+
+/*EMAILS */
+//we get all the data of the message_email table...
+router.get('/emails', crud.getEmails); 
+
+//Path to delete an email by its ID... 
+router.delete('/delete_email/:id', crud.deleteEmails);
+
+/*TECHNOLOGYS*/
+//We get all the data of the tech table...
+router.get('/technologys', crud.getTech);
+
+//route to update the information of a technology...
+router.put('/technology_update/:id', crud.putTech);
 
 module.exports = router;
