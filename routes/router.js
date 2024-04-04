@@ -62,12 +62,13 @@ router.post('/message_email', crud.postMessageEmails);
             - get -> done
             - update -> done
         5. resume_info. 
-            - get -> unstarted
-            - update -> unstarted
+            - get -> done
+            - update -> done
         6.Personal_info.
-            - get -> unstarted
-            - update -> unstarted
-        7.
+            - get -> done
+            - update -> done
+        7.Personal projects... 
+        8.Work projects...
 */
 
 /*EMAILS */
@@ -109,5 +110,19 @@ router.get('/experience', crud.getExperience);
 
 //route to update the description column...
 router.put('/update_experience', crud.putExperience);
+
+/*RESUME INFO*/
+//route to GET only the info of description_info column... 
+router.get('/resume_info', crud.getResumeInfo);
+
+//PUT:route to update only the info of description_info column...
+router.put('/update_resume_info', crud.putResumeInfo);
+
+/*INFO*/
+//GET
+router.get('/me', crud.getPersonalInfo);
+
+//PUT...
+router.put('/update_me', crud.putPersonalInfo);
 
 module.exports = router;

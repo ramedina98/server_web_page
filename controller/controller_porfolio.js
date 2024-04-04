@@ -430,12 +430,13 @@ exports.postMessageEmails = async (req, res) => {
         - get -> done
         - update -> done
     5. resume_info. 
-        - get -> unstarted
-        - update -> unstarted
+        - get -> done
+        - update -> done
     6.Personal_info.
-        - get -> unstarted
-        - update -> unstarted
-    7. 
+        - get -> done
+        - update -> done
+    7.Personal projects... 
+    8.Work projects...
 */
 
 /*EMAILS: here we have the email, get and delete controller functions...*/
@@ -790,3 +791,148 @@ exports.putExperience = async(req, res) => {
         });
     }
 }
+
+/*RESUME INFO: I only need the description column*/
+
+//GET...
+exports.getResumeInfo = async(_req, res) => {
+    try {
+        const data = await connection.query(`SELECT description_resume FROM resume_information 
+        WHERE id_info = ?`, [1]); 
+
+        /*If data is empty I return a message stating that nothing 
+        was found */
+        if(data.length === 0){
+            return res.status(404).json({
+                message: 'Nothing was found'
+            }); 
+        }
+
+        const description = {
+            id: 1,
+            text: data[0][0].description_resume,
+        }
+
+        // sending the description object as JSON response...
+        res.status(200).json(description);
+
+    } catch (error) {
+        // handle any error...
+        res.status(500).json({
+            message: error,
+        });
+    }
+}
+
+//PUT... 
+
+exports.putResumeInfo = async(req, res) => {
+    try {
+        // extract the text in request body...
+        const { text } = req.body; 
+
+        // Execute the query...
+        await connection.query(`UPDATE resume_information 
+        SET description_resume  = ?
+        WHERE id_info = ?`, [text, 1]); 
+
+        res.status(200).json({
+            message: 'Successfully updated'
+        }); 
+
+    } catch (error) {
+        //handle any error that may occur...
+        res.status(500).json({
+            message: 'Error updating experience', 
+            error: error.message,
+        });
+    }
+}
+
+/*PERSONAL INFO: in this case i need all the information of the table but at the moment
+of updating I will only be able to update the email, phone and job title columns*/
+
+//GET...
+exports.getPersonalInfo = async(_req, res) => {
+    try {
+        //execute the query...
+        const data = await connection.query(`SELECT m.id, m.first_name, m.second_name, 
+        m.paternal_surname, m.maternal_surname, m.email, m.phone, m.job_title, l.country, 
+        l.state, l.city
+        FROM me m 
+        JOIN location l ON m.location = l.id_l 
+        WHERE id = ?`, [1]);
+
+        //check if the array is empty or not...
+        if(data.length === 0){
+            return res.status(404).json({
+                message: "Nothing was found",
+            });
+        }
+
+        //defines an object...
+        const me = {
+            id: data[0][0].id, 
+            name1: data[0][0].first_name, 
+            name2: data[0][0].second_name,
+            lastName1: data[0][0].paternal_surname,
+            lastName2: data[0][0].maternal_surname,
+            email: data[0][0].email, 
+            phone: data[0][0].phone, 
+            title: data[0][0].job_title, 
+            country: data[0][0].country, 
+            state: data[0][0].state, 
+            city: data[0][0].city,
+        }
+
+        // sending the "me" object as JSON response...
+        res.status(200).json(me);
+
+    } catch (error) {
+        // handle any error...
+        res.status(500).json({
+            message: error,
+        });
+    }
+}
+
+//PUT... 
+exports.putPersonalInfo = async(req, res) => {
+    try {
+        //Extract data sent in the request body...
+        const { email, phone, title, country, state, city } = req.body;
+
+        //execute the query to update the information of the "me" table...
+        await connection.query(`UPDATE me
+        SET email = ?, phone = ?, job_title = ?
+        WHERE id = ?`, [email, phone, title, 1]);
+
+        // Execute the query to update the information of the "location" table...
+        await connection.query(`UPDATE location
+        SET country = ?, state = ?, city = ?
+        WHERE id_l = (
+            SELECT location 
+            FROM me
+            WHERE id = ?
+        )`, [country, state, city, 1]);
+
+        // send a success message...
+        res.status(200).json({
+            message: "Personal information updated successfully",
+        }); 
+
+    } catch (error) {
+        // Rollback the transaction in case of any error
+        await connection.rollback();
+
+        // Handle the error
+        res.status(500).json({
+            message: "Error updating personal information",
+            error: error.message,
+        });
+    }
+}
+
+/*PERSONAL PROJECTS...*/
+
+/*GET: */
